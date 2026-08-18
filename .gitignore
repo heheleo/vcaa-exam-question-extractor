@@ -1,0 +1,6 @@
+output/
+papers/
+*.pyc
+__pycache__/
+.pytest_cache/
+config.yaml
