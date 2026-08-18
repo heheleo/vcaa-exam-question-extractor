@@ -108,6 +108,16 @@ def _fix_malformed_bbox(text: str) -> str:
     )
     return text
 
+def _cast_into_int(value) -> int | None:
+    """Casts a value into int if possible
+    Prevents strings from crossing into typed code
+    """
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except:
+        return None
 
 def parse_detection_response(
     raw_json: str,
@@ -194,7 +204,7 @@ def parse_detection_response(
             questions.append(QuestionBbox(
                 question_number=str(entry.get("question_number", "")),
                 bbox=bbox,
-                marks=entry.get("marks"),
+                marks=_cast_into_int(entry.get("marks")),
                 continued=bool(entry.get("continued", False)),
                 continued_from=bool(entry.get("continued_from", False)),
             ))

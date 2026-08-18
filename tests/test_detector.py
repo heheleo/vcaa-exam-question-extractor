@@ -184,3 +184,17 @@ def test_encode_image_base64(tmp_path):
     b64 = detector._encode_image(img_path)
     assert isinstance(b64, str)
     assert len(b64) > 0
+
+def test_parse_marks_string_bleed():
+    response = json.dumps({
+        "page": 1,
+        "questions": [
+            {"question_number": "1", "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+             "marks": "2", "continued": False, "continued_from": False},
+            {"question_number": "2", "bbox": {"x": 0, "y": 60, "w": 100, "h": 50},
+             "marks": "2.5", "continued": False, "continued_from": False},
+        ]
+    })
+    questions = parse_detection_response(response, 800, 600)
+    assert questions[0].marks == 2
+    assert questions[1].marks is None
