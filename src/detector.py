@@ -1,6 +1,7 @@
 """Qwen V3 vision model integration for question detection."""
 
 from __future__ import annotations
+from ast import Attribute
 
 import base64
 import json
@@ -208,7 +209,7 @@ def parse_detection_response(
                 continued=bool(entry.get("continued", False)),
                 continued_from=bool(entry.get("continued_from", False)),
             ))
-        except (KeyError, TypeError, ValueError) as e:
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
             logger.warning("Skipping malformed question entry: %s", e)
             continue
 

@@ -198,3 +198,19 @@ def test_parse_marks_string_bleed():
     questions = parse_detection_response(response, 800, 600)
     assert questions[0].marks == 2
     assert questions[1].marks is None
+
+def test_parse_skips_malformed_bbox_shapes():
+    response = json.dumps({
+        "page": 1,
+        "questions": [
+            {"question_number": "bad1", "bbox": [10, 20, 100, 200, 0.9, 1],
+             "marks": None, "continued": False, "continued_from": False},
+            {"question_number": "bad2", "bbox": 5,
+             "marks": None, "continued": False, "continued_from": False},
+            {"question_number": "good", "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
+             "marks": None, "continued": False, "continued_from": False},
+        ]
+    })
+    questions = parse_detection_response(response, 800, 600)
+    assert len(questions) == 1
+    assert questions[0].question_number == "good"
