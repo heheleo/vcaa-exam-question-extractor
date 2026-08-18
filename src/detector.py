@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import re
 from pathlib import Path
 
 from openai import OpenAI
@@ -14,71 +13,38 @@ from src.models import Bbox, QuestionBbox
 
 logger = logging.getLogger(__name__)
 
-_EXAM1_INTRO = """\
-You are reading a page of a VCE mathematics exam.
+DETECTION_PROMPT = """\
+You are reading page {page_number} of a VCE mathematics exam. The image is {width}x{height} pixels.
 
-This is page {page_number} of a VCE Exam 1 (short answer questions).
-Image dimensions: {width}px wide x {height}px tall. Use these exact pixel coordinates."""
+Find every printed question or sub-part label on this page: things like \
+"Question 3", "3.", "4", "a.", "b.", "i.", "ii.". Ignore page headers, \
+footers, watermarks, and multiple-choice option letters (A., B., C., D., E.).
 
-_EXAM2_INTRO = """\
-You are reading a page of a VCE mathematics exam.
+For each label return:
+- label: the exact printed text, nothing added, e.g. 'a.', '3', 'ii.'
+- box_2d: [ymin, xmin, ymax, xmax] in the built-in bounding box format, \
+values normalized to 0-1000. The box is the rectangle from this label down \
+to the next label, covering the full width of the question (one column on \
+two-column pages) and its working and answer lines
+- marks: the marks printed with the label (e.g. 3 for "(3 marks)"), or null
+- text: all printed text in this block, transcribed exactly
 
-This is page {page_number} of a VCE Exam 2 (Multiple Choice + Extended Response).
-Image dimensions: {width}px wide x {height}px tall. Use these exact pixel coordinates.
+If the page has no question content (cover page, formula sheet, blank page), \
+return {{"page": {page_number}, "blocks": []}}.
 
-This exam has two sections: Multiple Choice questions (numbered 1-20, with \
-options A-E, often in a 2-column layout) and Extended Response questions \
-(numbered 1-4, with sub-parts such as a., b., i., ii.)."""
-
-_BLOCK_INSTRUCTIONS = """\
-
-Find every BLOCK of question content on this page. A block begins at a printed label:
-- a top-level question label, such as "Question 3" or "3."
-- or a part label, such as "a.", "b.", "i.", "ii.", "c."
-
-A block extends downward from its label until the next block's label or the end \
-of the question content (include answer and working lines). Include the full \
-width of the block. Exclude page headers, footers, and watermarks.
-
-For each block, return:
-- label: the label at the top of the block, copied VERBATIM (e.g. "Question 3", \
-"3.", "a.", "ii."). Never guess or renumber.
-- bbox: the smallest box covering the entire block.
-- marks: total marks shown for the block ("[X marks]" or "X marks"), or null if \
-none visible. Marks usually appear at the top-level question only.
-
-If this page contains no question content — for example, a cover page, a \
-formula sheet, a blank page, instructions only, or a "TURN OVER" / \
-"END OF SECTION" page — return {{"page": {page_number}, "blocks": []}}.
-
-Return ONLY a JSON object (no markdown, no explanation):
-{{"page": {page_number}, "blocks": [{{"label": "...", \
-"bbox": {{"x": 0, "y": 0, "w": 0, "h": 0}}, "marks": null}}]}}"""
-
-EXAM1_SYSTEM_PROMPT = _EXAM1_INTRO + _BLOCK_INSTRUCTIONS
-EXAM2_SYSTEM_PROMPT = _EXAM2_INTRO + _BLOCK_INSTRUCTIONS
+Return ONLY JSON, nothing else:
+{{"page": {page_number}, "blocks": [{{"label": "3", "box_2d": [80, 60, 400, 940], "marks": 3, "text": "Question 3\nFind the derivative of ..."}}]}}
+"""
 
 
-def _fix_malformed_bbox(text: str) -> str:
-    """Fix common VLM bbox formatting errors before JSON parsing.
-
-    Handles:
-    - {"x": 138, 66, 941, 398} → {"x": 138, "y": 66, "w": 941, "h": 398}
-    - [138, 66, 941, 398] as bbox value → {"x": 138, ...}
-    """
-    # Fix bbox objects missing keys: {"x": N, N, N, N} → {"x": N, "y": N, "w": N, "h": N}
-    text = re.sub(
-        r'"bbox"\s*:\s*\{\s*"x"\s*:\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}',
-        r'"bbox": {"x": \1, "y": \2, "w": \3, "h": \4}',
-        text,
-    )
-    # Fix bbox as 4-element array: [N, N, N, N] → {"x": N, "y": N, "w": N, "h": N}
-    text = re.sub(
-        r'"bbox"\s*:\s*\[\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]',
-        r'"bbox": {"x": \1, "y": \2, "w": \3, "h": \4}',
-        text,
-    )
-    return text
+def _box_2d_to_bbox(box: list, page_width: int, page_height: int) -> Bbox:
+    """Convert Gemini's box_2d [ymin, xmin, ymax, xmax] (0-1000) to pixels."""
+    ymin, xmin, ymax, xmax = [float(v) for v in box]
+    x1 = round(xmin / 1000 * page_width)
+    y1 = round(ymin / 1000 * page_height)
+    x2 = round(xmax / 1000 * page_width)
+    y2 = round(ymax / 1000 * page_height)
+    return Bbox(x=x1, y=y1, w=x2 - x1, h=y2 - y1)
 
 
 def _cast_into_int(value) -> int | None:
@@ -98,7 +64,7 @@ def parse_detection_response(
     page_width: int,
     page_height: int,
 ) -> list[QuestionBbox]:
-    """Parse Qwen V3 JSON response into QuestionBbox objects.
+    """Parse JSON response into QuestionBbox objects.
 
     Handles invalid JSON, missing keys, out-of-bounds bboxes, zero-area
     bboxes, and markdown-wrapped JSON. Never raises — returns empty list
@@ -115,9 +81,6 @@ def parse_detection_response(
             lines = lines[:-1]
         text = "\n".join(lines).strip()
 
-    # Fix common VLM bbox formatting errors before parsing
-    text = _fix_malformed_bbox(text)
-
     # Try multiple parsing strategies
     data = None
     for attempt in range(3):
@@ -125,7 +88,7 @@ def parse_detection_response(
             parsed = json.loads(text)
             # If result is a string, it's double-encoded JSON — parse again
             if isinstance(parsed, str):
-                text = _fix_malformed_bbox(parsed.strip())
+                text = parsed.strip()
                 continue
             data = parsed
             break
@@ -133,7 +96,7 @@ def parse_detection_response(
             # If text starts with a quote, try stripping surrounding quotes
             if attempt == 0 and text.startswith('"') and text.endswith('"'):
                 try:
-                    text = _fix_malformed_bbox(json.loads(text))
+                    text = json.loads(text)
                 except json.JSONDecodeError:
                     pass
             elif attempt == 1:
@@ -141,7 +104,7 @@ def parse_detection_response(
                 start = text.find("{")
                 end = text.rfind("}")
                 if start >= 0 and end > start:
-                    text = _fix_malformed_bbox(text[start : end + 1])
+                    text = text[start : end + 1]
             else:
                 logger.warning(
                     "Failed to parse JSON after 3 attempts: %.200s...", raw_json
@@ -158,23 +121,13 @@ def parse_detection_response(
             if not label:
                 logger.warning("Skipping block with empty label")
                 continue
-            bbox_raw = entry["bbox"]
-            # Handle array format: [x, y, w, h]
-            if isinstance(bbox_raw, list) and len(bbox_raw) == 4:
-                bbox = Bbox(
-                    x=int(bbox_raw[0]),
-                    y=int(bbox_raw[1]),
-                    w=int(bbox_raw[2]),
-                    h=int(bbox_raw[3]),
-                )
-            else:
-                bbox = Bbox(
-                    x=int(bbox_raw.get("x", 0)),
-                    y=int(bbox_raw.get("y", 0)),
-                    w=int(bbox_raw.get("w", 0)),
-                    h=int(bbox_raw.get("h", 0)),
-                )
-            bbox = bbox.clamp(page_width, page_height)
+            box_raw = entry["box_2d"]
+            if not isinstance(box_raw, list) or len(box_raw) != 4:
+                logger.warning("Skipping block '%s': malformed box_2d", label)
+                continue
+            bbox = _box_2d_to_bbox(box_raw, page_width, page_height).clamp(
+                page_width, page_height
+            )
 
             if not bbox.is_valid(page_width, page_height):
                 logger.warning(
@@ -188,6 +141,7 @@ def parse_detection_response(
                     label=label,
                     bbox=bbox,
                     marks=_cast_into_int(entry.get("marks")),
+                    text=str(entry.get("text", "")).strip(),
                 )
             )
         except (KeyError, TypeError, ValueError, AttributeError) as e:
@@ -198,7 +152,7 @@ def parse_detection_response(
 
 
 class Detector:
-    """Calls Qwen V3 API to detect question bounding boxes on exam pages."""
+    """Calls a vision model API to detect question bounding boxes on exam pages."""
 
     def __init__(self, base_url: str, api_key: str, model: str, timeout: int = 120):
         self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
@@ -207,14 +161,12 @@ class Detector:
     def detect(
         self,
         page_image: Path,
-        exam_type: str,
         page_number: int,
     ) -> list[QuestionBbox]:
         """Detect question blocks on a single page image.
 
         Args:
             page_image: Path to the rendered page PNG.
-            exam_type: "exam1" (SAQ) or "exam2" (MCQ+ER).
             page_number: 1-based page number (used in the prompt).
 
         Returns:
@@ -226,8 +178,9 @@ class Detector:
         with PILImage.open(page_image) as img:
             width, height = img.size
 
-        template = EXAM1_SYSTEM_PROMPT if exam_type == "exam1" else EXAM2_SYSTEM_PROMPT
-        prompt = template.format(page_number=page_number, width=width, height=height)
+        prompt = DETECTION_PROMPT.format(
+            page_number=page_number, width=width, height=height
+        )
         image_b64 = self._encode_image(page_image)
 
         try:
@@ -248,15 +201,10 @@ class Detector:
                     }
                 ],
                 temperature=0.0,
-                max_tokens=4096,
+                max_tokens=8192,
             )
         except Exception as e:
-            logger.error(
-                "API call failed for page %d of exam type '%s': %s",
-                page_number,
-                exam_type,
-                e,
-            )
+            logger.error("API call failed for page %d: %s", page_number, e)
             return []
 
         raw_text = response.choices[0].message.content or ""

@@ -44,7 +44,6 @@ def test_parse_official_exam1():
     assert meta.source == "vcaa"
     assert meta.exam_type == "exam1"
     assert meta.key == "2024-vcaa-exam1"
-    assert meta.is_official is True
 
 
 def test_parse_trial_exam2():
@@ -54,7 +53,6 @@ def test_parse_trial_exam2():
     assert meta.source == "heffernan"
     assert meta.exam_type == "exam2"
     assert meta.key == "2025-heffernan-exam2"
-    assert meta.is_official is False
 
 
 def test_parse_invalid_filenames():

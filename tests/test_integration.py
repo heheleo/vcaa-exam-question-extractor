@@ -40,7 +40,11 @@ def test_full_pipeline_with_mock(test_pdf, tmp_path):
 
     mock = MagicMock()
     mock.detect.side_effect = [
-        [QuestionBbox(label="1", bbox=Bbox(40, 30, 500, 150), marks=5)],
+        [
+            QuestionBbox(
+                label="1", bbox=Bbox(40, 30, 500, 150), marks=5, text="Find x."
+            )
+        ],
         [QuestionBbox(label="2", bbox=Bbox(40, 30, 500, 150), marks=5)],
     ]
 
@@ -60,6 +64,8 @@ def test_full_pipeline_with_mock(test_pdf, tmp_path):
         mapping = json.load(f)
     assert mapping["year"] == 2024
     assert mapping["total_questions"] == 2
+    assert mapping["questions"][0]["text"] == "Find x."
+    assert mapping["questions"][1]["text"] == ""
 
     for q in result.questions:
         img = Image.open(exam_dir / q.image)

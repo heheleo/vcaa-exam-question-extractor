@@ -43,6 +43,7 @@ class QuestionBbox:
     label: str
     bbox: Bbox
     marks: int | None = None
+    text: str = ""  # OCRed content of the block, for later label classification
 
 
 @dataclass
@@ -58,10 +59,6 @@ class PaperMeta:
     def key(self) -> str:
         return f"{self.year}-{self.source}-{self.exam_type}"
 
-    @property
-    def is_official(self) -> bool:
-        return self.source.lower() == "vcaa"
-
 
 @dataclass
 class QuestionResult:
@@ -73,6 +70,7 @@ class QuestionResult:
     pages: list[int]
     has_subquestions: bool
     cross_page: bool
+    text: str = ""  # concatenated OCRed text of the question's blocks
 
 
 @dataclass
@@ -100,6 +98,7 @@ class ExamResult:
                     "pages": q.pages,
                     "has_subquestions": q.has_subquestions,
                     "cross_page": q.cross_page,
+                    "text": q.text,
                 }
                 for q in self.questions
             ],

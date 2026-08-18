@@ -3,10 +3,9 @@ import json
 from PIL import Image
 
 from src.detector import (
-    EXAM1_SYSTEM_PROMPT,
-    EXAM2_SYSTEM_PROMPT,
+    DETECTION_PROMPT,
     Detector,
-    _fix_malformed_bbox,
+    _box_2d_to_bbox,
     parse_detection_response,
 )
 
@@ -18,12 +17,13 @@ def test_parse_valid_response():
             "blocks": [
                 {
                     "label": "1",
-                    "bbox": {"x": 50, "y": 100, "w": 700, "h": 200},
+                    "box_2d": [100, 50, 300, 750],
                     "marks": 5,
+                    "text": "Solve for x",
                 },
                 {
                     "label": "2",
-                    "bbox": {"x": 50, "y": 310, "w": 700, "h": 300},
+                    "box_2d": [310, 50, 900, 750],
                     "marks": 8,
                 },
             ],
@@ -33,6 +33,13 @@ def test_parse_valid_response():
     assert len(blocks) == 2
     assert blocks[0].label == "1"
     assert blocks[0].marks == 5
+    assert blocks[0].text == "Solve for x"
+    assert blocks[1].text == ""  # missing text defaults to empty
+    # [100, 50, 300, 750] on 800x1000 -> x=40, y=100, w=560, h=200
+    assert blocks[0].bbox.x == 40
+    assert blocks[0].bbox.y == 100
+    assert blocks[0].bbox.w == 560
+    assert blocks[0].bbox.h == 200
     assert blocks[1].label == "2"
 
 
@@ -44,12 +51,12 @@ def test_parse_marks_string_bleed():
             "blocks": [
                 {
                     "label": "1",
-                    "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+                    "box_2d": [0, 0, 100, 50],
                     "marks": "2",
                 },
                 {
                     "label": "2",
-                    "bbox": {"x": 0, "y": 60, "w": 100, "h": 50},
+                    "box_2d": [60, 0, 160, 50],
                     "marks": "2.5",
                 },
             ],
@@ -67,7 +74,7 @@ def test_parse_response_with_nulls():
             "blocks": [
                 {
                     "label": "5",
-                    "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+                    "box_2d": [0, 0, 100, 50],
                     "marks": None,
                 },
             ],
@@ -78,14 +85,15 @@ def test_parse_response_with_nulls():
     assert blocks[0].marks is None
 
 
-def test_parse_bbox_clamped_to_bounds():
+def test_parse_box_2d_clamped_to_bounds():
+    """Out-of-range box_2d values must not escape the page."""
     response = json.dumps(
         {
             "page": 1,
             "blocks": [
                 {
                     "label": "1",
-                    "bbox": {"x": -10, "y": -5, "w": 9999, "h": 9999},
+                    "box_2d": [-100, -50, 2000, 1500],
                     "marks": None,
                 },
             ],
@@ -106,7 +114,7 @@ def test_parse_invalid_json():
 
 def test_parse_double_encoded_json():
     """JSON wrapped as a JSON string should be handled."""
-    inner = '{"page": 1, "blocks": [{"label": "1", "bbox": {"x": 0, "y": 0, "w": 100, "h": 50}, "marks": null}]}'
+    inner = '{"page": 1, "blocks": [{"label": "1", "box_2d": [0, 0, 100, 50], "marks": null}]}'
     response = json.dumps(inner)  # Double-encode: a JSON string
     blocks = parse_detection_response(response, 800, 600)
     assert len(blocks) == 1
@@ -115,7 +123,7 @@ def test_parse_double_encoded_json():
 
 def test_parse_quoted_json():
     """JSON wrapped in regular quotes should be handled."""
-    inner = '{"page": 1, "blocks": [{"label": "2", "bbox": {"x": 10, "y": 20, "w": 100, "h": 50}, "marks": null}]}'
+    inner = '{"page": 1, "blocks": [{"label": "2", "box_2d": [10, 20, 110, 50], "marks": null}]}'
     response = '"' + inner + '"'  # Wrapped in quotes
     blocks = parse_detection_response(response, 800, 600)
     assert len(blocks) == 1
@@ -124,54 +132,37 @@ def test_parse_quoted_json():
 
 def test_parse_markdown_wrapped_json():
     """JSON inside ```json ... ``` fences should be extracted."""
-    inner = '{"page": 1, "blocks": [{"label": "3", "bbox": {"x": 0, "y": 0, "w": 50, "h": 30}, "marks": 2}]}'
+    inner = '{"page": 1, "blocks": [{"label": "3", "box_2d": [0, 0, 100, 50], "marks": 2}]}'
     response = "```json\n" + inner + "\n```"
     blocks = parse_detection_response(response, 800, 600)
     assert len(blocks) == 1
     assert blocks[0].label == "3"
 
 
-def test_parse_bbox_array_format():
-    """Bbox as [x, y, w, h] array should be handled."""
-    response = '{"page": 1, "blocks": [{"label": "4", "bbox": [10, 20, 100, 200], "marks": 3}]}'
-    blocks = parse_detection_response(response, 800, 600)
-    assert len(blocks) == 1
-    assert blocks[0].bbox.x == 10
-    assert blocks[0].bbox.y == 20
-    assert blocks[0].bbox.w == 100
-    assert blocks[0].bbox.h == 200
-
-
-def test_parse_bbox_missing_keys():
-    """Bbox with missing y/w/h keys should be fixed before parsing."""
-    response = '{"page": 1, "blocks": [{"label": "5", "bbox": {"x": 50, 100, 300, 200}, "marks": 2}]}'
-    blocks = parse_detection_response(response, 800, 600)
-    assert len(blocks) == 1
-    assert blocks[0].bbox.x == 50
-    assert blocks[0].bbox.y == 100
-    assert blocks[0].bbox.w == 300
-    assert blocks[0].bbox.h == 200
-
-
-def test_parse_skips_malformed_bbox_shapes():
-    """One malformed bbox must not lose the rest of the page's blocks."""
+def test_parse_skips_malformed_box_2d():
+    """One malformed box_2d must not lose the rest of the page's blocks."""
     response = json.dumps(
         {
             "page": 1,
             "blocks": [
                 {
                     "label": "bad1",
-                    "bbox": [10, 20, 100, 200, 0.9, 1],
+                    "box_2d": [10, 20, 100, 200, 0.9, 1],
                     "marks": None,
                 },
                 {
                     "label": "bad2",
-                    "bbox": 5,
+                    "box_2d": 5,
+                    "marks": None,
+                },
+                {
+                    "label": "bad3",
+                    "box_2d": [100, 100, 100, 100],  # zero area
                     "marks": None,
                 },
                 {
                     "label": "good",
-                    "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
+                    "box_2d": [10, 10, 100, 50],
                     "marks": None,
                 },
             ],
@@ -189,7 +180,7 @@ def test_parse_skips_empty_label():
             "blocks": [
                 {
                     "label": "",
-                    "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+                    "box_2d": [0, 0, 100, 50],
                     "marks": None,
                 },
             ],
@@ -198,26 +189,13 @@ def test_parse_skips_empty_label():
     assert parse_detection_response(response, 800, 600) == []
 
 
-def test_fix_malformed_bbox_missing_keys():
-    result = _fix_malformed_bbox('{"bbox": {"x": 1, 2, 3, 4}}')
-    assert '"y": 2' in result
-    assert '"w": 3' in result
-    assert '"h": 4' in result
-
-
-def test_fix_malformed_bbox_array():
-    result = _fix_malformed_bbox('{"bbox": [10, 20, 30, 40]}')
-    assert '"x": 10' in result
-    assert '"y": 20' in result
-    assert '"w": 30' in result
-    assert '"h": 40' in result
-
-
-def test_fix_malformed_bbox_noop():
-    """Already-valid bbox should be unchanged."""
-    valid = '{"bbox": {"x": 1, "y": 2, "w": 3, "h": 4}}'
-    result = _fix_malformed_bbox(valid)
-    assert result == valid
+def test_box_2d_to_bbox_scales_by_page_size():
+    box = [100, 50, 300, 750]  # ymin, xmin, ymax, xmax in 0-1000
+    bbox = _box_2d_to_bbox(box, page_width=800, page_height=1000)
+    assert bbox.x == 40
+    assert bbox.y == 100
+    assert bbox.w == 560
+    assert bbox.h == 200
 
 
 def test_parse_missing_blocks_key():
@@ -228,43 +206,14 @@ def test_parse_empty_blocks():
     assert parse_detection_response('{"page": 1, "blocks": []}', 800, 600) == []
 
 
-def test_parse_skips_zero_area_bbox():
-    response = json.dumps(
-        {
-            "page": 1,
-            "blocks": [
-                {
-                    "label": "bad",
-                    "bbox": {"x": 0, "y": 0, "w": 0, "h": 0},
-                    "marks": None,
-                },
-                {
-                    "label": "good",
-                    "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
-                    "marks": None,
-                },
-            ],
-        }
-    )
-    blocks = parse_detection_response(response, 800, 600)
-    assert len(blocks) == 1
-    assert blocks[0].label == "good"
-
-
-def test_exam1_prompt_contains_key_instructions():
-    assert "Exam 1" in EXAM1_SYSTEM_PROMPT
-    assert "label" in EXAM1_SYSTEM_PROMPT.lower()
-    assert "verbatim" in EXAM1_SYSTEM_PROMPT.lower()
-    assert "blocks" in EXAM1_SYSTEM_PROMPT.lower()
-    assert "formula sheet" in EXAM1_SYSTEM_PROMPT.lower()
-
-
-def test_exam2_prompt_contains_key_instructions():
-    assert "Exam 2" in EXAM2_SYSTEM_PROMPT
-    assert "Multiple Choice" in EXAM2_SYSTEM_PROMPT
-    assert "Extended Response" in EXAM2_SYSTEM_PROMPT
-    assert "label" in EXAM2_SYSTEM_PROMPT.lower()
-    assert "formula sheet" in EXAM2_SYSTEM_PROMPT.lower()
+def test_prompt_contains_key_instructions():
+    assert "label" in DETECTION_PROMPT.lower()
+    assert "exact printed text" in DETECTION_PROMPT.lower()
+    assert "blocks" in DETECTION_PROMPT.lower()
+    assert "formula sheet" in DETECTION_PROMPT.lower()
+    assert "option letters" in DETECTION_PROMPT.lower()
+    assert "box_2d" in DETECTION_PROMPT
+    assert "0-1000" in DETECTION_PROMPT
 
 
 def test_encode_image_base64(tmp_path):

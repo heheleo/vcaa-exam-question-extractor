@@ -144,7 +144,7 @@ def process_paper(
     # Stage 2: Detect
     raw_questions: list[tuple[int, QuestionBbox]] = []
     for i, page_path in enumerate(page_images, start=1):
-        for q in detector.detect(page_path, paper.exam_type, page_number=i):
+        for q in detector.detect(page_path, page_number=i):
             raw_questions.append((i, q))
 
     if not raw_questions:
@@ -181,6 +181,7 @@ def process_paper(
         final_image = merge_vertical(parts)
         first_label = group[0][1].label
         question_number = extract_number(first_label) or first_label
+        question_text = "\n".join(q.text for _, q in group if q.text)
 
         # The header's marks are the question total; part marks ("1 mark"
         # inside a part's answer space) only matter when the header has none.
@@ -207,6 +208,7 @@ def process_paper(
                 pages=pages_involved,
                 has_subquestions=has_subquestions,
                 cross_page=len(group) > 1,
+                text=question_text,
             )
         )
 
