@@ -1,4 +1,4 @@
-"""Image manipulation: crop, trim blank space, merge cross-page questions."""
+"""Image manipulation: crop, trim, merge cross-page questions."""
 
 from __future__ import annotations
 
@@ -34,24 +34,13 @@ def trim_blank_bottom(image: Image.Image) -> Image.Image:
     width, height = gray.size
     pixels = gray.load()
 
-    last_content = height - 1
     for y in range(height - 1, -1, -1):
         for x in range(width):
             if pixels[x, y] < 250:
-                last_content = y
-                break
-        else:
-            continue
-        break
+                return image.crop((0, 0, width, min(y + 10, height)))
 
-    # If entirely blank, return as-is
-    if last_content == height - 1:
-        all_white = all(pixels[0, y] >= 250 for y in range(height))
-        if all_white:
-            return image
-
-    crop_to = min(last_content + 10, height)
-    return image.crop((0, 0, width, crop_to))
+    # Entirely blank — return as-is
+    return image
 
 
 def merge_vertical(images: list[Image.Image]) -> Image.Image:

@@ -1,4 +1,4 @@
-"""Qwen V3 vision model integration for question detection."""
+"""Vision model integration for question detection."""
 
 from __future__ import annotations
 
@@ -14,77 +14,49 @@ from src.models import Bbox, QuestionBbox
 
 logger = logging.getLogger(__name__)
 
-EXAM1_SYSTEM_PROMPT = """\
-You are an expert at analyzing VCE mathematics exam layouts.
+_EXAM1_INTRO = """\
+You are reading a page of a VCE mathematics exam.
 
-This is page {page_number} of a VCE Exam 1 (Short Answer Questions).
-Image dimensions: {width}px wide x {height}px tall. Use these exact pixel coordinates.
+This is page {page_number} of a VCE Exam 1 (short answer questions).
+Image dimensions: {width}px wide x {height}px tall. Use these exact pixel coordinates."""
 
-Identify every TOP-LEVEL question on this page. A top-level question is the \
-highest-numbered unit (e.g., "Question 1", "1."). Sub-parts labeled (a), (b), \
-i., ii. belong to their parent question — do NOT split them.
-
-For each top-level question, return a bounding box that:
-- Starts at the question number/title
-- Extends downward to include ALL sub-parts AND all answer/working lines
-- Extends horizontally across the full question width
-- Excludes page headers, footers, and watermarks
-
-Also determine:
-- marks: total marks shown. Look for "[X marks]" or "X marks" near the question. \
-Use null if not visible.
-- continued: true ONLY if the question is clearly cut off at the page bottom and \
-appears incomplete. False if it ends naturally on this page.
-- continued_from: true ONLY if this question began on a previous page (starts \
-mid-sentence or shows continuation indicator).
-
-If this page contains no exam questions — for example, it is a cover page, \
-a formula sheet, a blank page, instructions only, or a "TURN OVER" / \
-"END OF SECTION" page — return {{"page": {page_number}, "questions": []}}.
-
-Return ONLY a JSON object (no markdown, no explanation):
-{{"page": {page_number}, "questions": [{{"question_number": "...", \
-"bbox": {{"x": 0, "y": 0, "w": 0, "h": 0}}, "marks": null, \
-"continued": false, "continued_from": false}}]}}"""
-
-EXAM2_SYSTEM_PROMPT = """\
-You are an expert at analyzing VCE mathematics exam layouts.
+_EXAM2_INTRO = """\
+You are reading a page of a VCE mathematics exam.
 
 This is page {page_number} of a VCE Exam 2 (Multiple Choice + Extended Response).
 Image dimensions: {width}px wide x {height}px tall. Use these exact pixel coordinates.
 
-This exam contains TWO question formats on different pages/sections:
-1. Multiple Choice Questions (MCQ): Short numbered questions (1-20) with \
-options A-E. Often in 2-column layout.
-2. Extended Response (ER): Longer numbered questions (1-4) with sub-parts \
-(a), (b), i., ii. Often full-width.
+This exam has two sections: Multiple Choice questions (numbered 1-20, with \
+options A-E, often in a 2-column layout) and Extended Response questions \
+(numbered 1-4, with sub-parts such as a., b., i., ii.)."""
 
-Identify every TOP-LEVEL question on this page:
-- For MCQ: Each numbered multiple-choice block (question + options A-E) is \
-ONE top-level question.
-- For ER: Each numbered question with ALL its sub-parts is ONE top-level question.
-- Sub-parts are NEVER separate questions.
+_BLOCK_INSTRUCTIONS = """\
 
-For each question, return a bounding box that:
-- Starts at the question number
-- Extends downward to include all options (MCQ) or all sub-parts + working lines (ER)
-- Extends horizontally across the full question
-- Excludes page headers, footers, and watermarks
+Find every BLOCK of question content on this page. A block begins at a printed label:
+- a top-level question label, such as "Question 3" or "3."
+- or a part label, such as "a.", "b.", "i.", "ii.", "c."
 
-Also determine:
-- marks: total marks shown. MCQ = usually 1. ER = look for "[X marks]". \
-Use null if not visible.
-- continued: true ONLY if question is cut off at the bottom of this page.
-- continued_from: true ONLY if question began on a previous page.
+A block extends downward from its label until the next block's label or the end \
+of the question content (include answer and working lines). Include the full \
+width of the block. Exclude page headers, footers, and watermarks.
 
-If this page contains no exam questions — for example, it is a cover page, \
-a formula sheet, a blank page, instructions only, or a "TURN OVER" / \
-"END OF SECTION" page — return {{"page": {page_number}, "questions": []}}.
+For each block, return:
+- label: the label at the top of the block, copied VERBATIM (e.g. "Question 3", \
+"3.", "a.", "ii."). Never guess or renumber.
+- bbox: the smallest box covering the entire block.
+- marks: total marks shown for the block ("[X marks]" or "X marks"), or null if \
+none visible. Marks usually appear at the top-level question only.
+
+If this page contains no question content — for example, a cover page, a \
+formula sheet, a blank page, instructions only, or a "TURN OVER" / \
+"END OF SECTION" page — return {{"page": {page_number}, "blocks": []}}.
 
 Return ONLY a JSON object (no markdown, no explanation):
-{{"page": {page_number}, "questions": [{{"question_number": "...", \
-"bbox": {{"x": 0, "y": 0, "w": 0, "h": 0}}, "marks": null, \
-"continued": false, "continued_from": false}}]}}"""
+{{"page": {page_number}, "blocks": [{{"label": "...", \
+"bbox": {{"x": 0, "y": 0, "w": 0, "h": 0}}, "marks": null}}]}}"""
+
+EXAM1_SYSTEM_PROMPT = _EXAM1_INTRO + _BLOCK_INSTRUCTIONS
+EXAM2_SYSTEM_PROMPT = _EXAM2_INTRO + _BLOCK_INSTRUCTIONS
 
 
 def _fix_malformed_bbox(text: str) -> str:
@@ -176,12 +148,16 @@ def parse_detection_response(
                 )
                 return []
 
-    if not isinstance(data, dict) or "questions" not in data:
+    if not isinstance(data, dict) or "blocks" not in data:
         return []
 
-    questions: list[QuestionBbox] = []
-    for entry in data["questions"]:
+    blocks: list[QuestionBbox] = []
+    for entry in data["blocks"]:
         try:
+            label = str(entry.get("label", "")).strip()
+            if not label:
+                logger.warning("Skipping block with empty label")
+                continue
             bbox_raw = entry["bbox"]
             # Handle array format: [x, y, w, h]
             if isinstance(bbox_raw, list) and len(bbox_raw) == 4:
@@ -202,25 +178,23 @@ def parse_detection_response(
 
             if not bbox.is_valid(page_width, page_height):
                 logger.warning(
-                    "Skipping question '%s': bbox has zero or negative area",
-                    entry.get("question_number", "?"),
+                    "Skipping block '%s': bbox has zero or negative area",
+                    label,
                 )
                 continue
 
-            questions.append(
+            blocks.append(
                 QuestionBbox(
-                    question_number=str(entry.get("question_number", "")),
+                    label=label,
                     bbox=bbox,
                     marks=_cast_into_int(entry.get("marks")),
-                    continued=bool(entry.get("continued", False)),
-                    continued_from=bool(entry.get("continued_from", False)),
                 )
             )
         except (KeyError, TypeError, ValueError, AttributeError) as e:
-            logger.warning("Skipping malformed question entry: %s", e)
+            logger.warning("Skipping malformed block entry: %s", e)
             continue
 
-    return questions
+    return blocks
 
 
 class Detector:
@@ -236,7 +210,7 @@ class Detector:
         exam_type: str,
         page_number: int,
     ) -> list[QuestionBbox]:
-        """Detect top-level question bounding boxes on a single page image.
+        """Detect question blocks on a single page image.
 
         Args:
             page_image: Path to the rendered page PNG.
@@ -244,7 +218,7 @@ class Detector:
             page_number: 1-based page number (used in the prompt).
 
         Returns:
-            List of detected questions with bounding boxes.
+            List of detected blocks with labels and bounding boxes.
             Empty list if nothing detected or on error.
         """
         from PIL import Image as PILImage
@@ -290,9 +264,9 @@ class Detector:
             "Raw detector response for page %d: %s", page_number, raw_text[:200]
         )
 
-        questions = parse_detection_response(raw_text, width, height)
-        logger.info("Page %d: detected %d questions", page_number, len(questions))
-        return questions
+        blocks = parse_detection_response(raw_text, width, height)
+        logger.info("Page %d: detected %d blocks", page_number, len(blocks))
+        return blocks
 
     def _encode_image(self, image_path: Path) -> str:
         """Read image file and return base64-encoded string."""

@@ -32,11 +32,9 @@ def test_bbox_is_valid():
 
 def test_question_bbox_defaults():
     b = Bbox(x=0, y=0, w=50, h=60)
-    q = QuestionBbox(question_number="3", bbox=b)
-    assert q.question_number == "3"
+    q = QuestionBbox(label="3", bbox=b)
+    assert q.label == "3"
     assert q.marks is None
-    assert q.continued is False
-    assert q.continued_from is False
 
 
 def test_parse_official_exam1():

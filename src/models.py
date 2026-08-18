@@ -38,13 +38,11 @@ class Bbox:
 
 @dataclass
 class QuestionBbox:
-    """A detected question on a single page."""
+    """A detected question block on a single page."""
 
-    question_number: str
+    label: str
     bbox: Bbox
     marks: int | None = None
-    continued: bool = False
-    continued_from: bool = False
 
 
 @dataclass

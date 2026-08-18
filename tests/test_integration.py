@@ -40,8 +40,8 @@ def test_full_pipeline_with_mock(test_pdf, tmp_path):
 
     mock = MagicMock()
     mock.detect.side_effect = [
-        [QuestionBbox(question_number="1", bbox=Bbox(40, 30, 500, 150), marks=5)],
-        [QuestionBbox(question_number="2", bbox=Bbox(40, 30, 500, 150), marks=5)],
+        [QuestionBbox(label="1", bbox=Bbox(40, 30, 500, 150), marks=5)],
+        [QuestionBbox(label="2", bbox=Bbox(40, 30, 500, 150), marks=5)],
     ]
 
     result = process_paper(paper, output_dir, mock, temp_dir, dpi=72)
@@ -66,33 +66,89 @@ def test_full_pipeline_with_mock(test_pdf, tmp_path):
         assert img.width > 0 and img.height > 0
 
 
-def test_cross_page_merge(test_pdf, tmp_path):
+def test_raster_only_pdf_still_processed(tmp_path):
+    # Detection is entirely AI-driven, so the page content doesn't matter.
+    path = tmp_path / "2024-vcaa-exam-1.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.draw_rect(fitz.Rect(50, 50, 500, 700), color=(0, 0, 0))
+    doc.save(str(path))
+    doc.close()
+
     output_dir = tmp_path / "output"
     temp_dir = tmp_path / "temp"
     temp_dir.mkdir()
     output_dir.mkdir()
 
-    paper = PaperMeta(path=test_pdf, year=2024, source="vcaa", exam_type="exam1")
+    paper = PaperMeta(path=path, year=2024, source="vcaa", exam_type="exam1")
 
     mock = MagicMock()
-    mock.detect.side_effect = [
-        [
-            QuestionBbox(
-                question_number="1", bbox=Bbox(40, 30, 500, 700), continued=True
-            )
-        ],
-        [
-            QuestionBbox(
-                question_number="1",
-                bbox=Bbox(40, 30, 500, 400),
-                marks=8,
-                continued_from=True,
-            )
-        ],
+    mock.detect.return_value = [
+        QuestionBbox(label="1", bbox=Bbox(40, 30, 500, 150), marks=5)
     ]
 
     result = process_paper(paper, output_dir, mock, temp_dir, dpi=72)
 
     assert len(result.questions) == 1
+    assert result.questions[0].number == "1"
+    mock.detect.assert_called_once()
+
+
+def test_marks_use_header_total(tmp_path):
+    # The header's marks are the question total; a part's marks don't add.
+    path = tmp_path / "2024-vcaa-exam-1.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((50, 40), "Question 1", fontsize=14)
+    doc.save(str(path))
+    doc.close()
+
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    temp_dir.mkdir()
+    output_dir.mkdir()
+
+    paper = PaperMeta(path=path, year=2024, source="vcaa", exam_type="exam1")
+
+    mock = MagicMock()
+    mock.detect.return_value = [
+        QuestionBbox(label="1", bbox=Bbox(40, 30, 500, 150), marks=5),
+        QuestionBbox(label="a", bbox=Bbox(40, 200, 500, 100), marks=1),
+    ]
+
+    result = process_paper(paper, output_dir, mock, temp_dir, dpi=72)
+
+    assert len(result.questions) == 1
+    assert result.questions[0].marks == 5
+
+
+def test_cross_page_merge(tmp_path):
+    # Page 1: Question 1. Page 2: its continuation part.
+    path = tmp_path / "2024-vcaa-exam-1.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((50, 40), "Question 1", fontsize=14)
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((50, 40), "(b) Part b", fontsize=11)
+    doc.save(str(path))
+    doc.close()
+
+    output_dir = tmp_path / "output"
+    temp_dir = tmp_path / "temp"
+    temp_dir.mkdir()
+    output_dir.mkdir()
+
+    paper = PaperMeta(path=path, year=2024, source="vcaa", exam_type="exam1")
+
+    mock = MagicMock()
+    mock.detect.side_effect = [
+        [QuestionBbox(label="1", bbox=Bbox(40, 30, 500, 700))],
+        [QuestionBbox(label="b", bbox=Bbox(40, 30, 500, 400))],
+    ]
+
+    result = process_paper(paper, output_dir, mock, temp_dir, dpi=72)
+
+    assert len(result.questions) == 1
+    assert result.questions[0].number == "1"
     assert result.questions[0].cross_page is True
     assert result.questions[0].pages == [1, 2]
