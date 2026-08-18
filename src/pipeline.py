@@ -6,17 +6,16 @@ import json
 import logging
 from pathlib import Path
 
+from src.cropper import crop_question, merge_vertical, trim_blank_bottom
+from src.detector import Detector
 from src.models import (
+    ExamResult,
+    PaperMeta,
     QuestionBbox,
     QuestionResult,
-    PaperMeta,
-    ExamResult,
     parse_filename,
-    build_index,
 )
 from src.pdf_utils import render_pages
-from src.detector import Detector
-from src.cropper import crop_question, trim_blank_bottom, merge_vertical
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +66,7 @@ def match_continued_questions(
         elif q.continued_from and not current_group:
             current_group = [(page, q)]
         elif current_group:
-            prev_page, prev_q = current_group[-1]
+            _prev_page, prev_q = current_group[-1]
             if prev_q.continued:
                 # Previous expected continuation; merge if same number
                 if prev_q.question_number == q.question_number:
@@ -127,8 +126,11 @@ def process_paper(
     if not raw_questions:
         logger.warning("[%s] No questions detected!", paper.key)
         return ExamResult(
-            key=paper.key, year=paper.year, source=paper.source,
-            exam_type=paper.exam_type, questions=[],
+            key=paper.key,
+            year=paper.year,
+            source=paper.source,
+            exam_type=paper.exam_type,
+            questions=[],
             path=str(paper.path),
         )
 
@@ -136,7 +138,9 @@ def process_paper(
     question_groups = match_continued_questions(raw_questions)
     logger.info(
         "[%s] Grouped %d detections into %d logical questions",
-        paper.key, len(raw_questions), len(question_groups),
+        paper.key,
+        len(raw_questions),
+        len(question_groups),
     )
 
     results: list[QuestionResult] = []
@@ -164,25 +168,32 @@ def process_paper(
             paper.exam_type == "exam2" and group_idx > 20
         )
 
-        results.append(QuestionResult(
-            number=question_number,
-            image=image_filename,
-            marks=total_marks,
-            pages=pages_involved,
-            has_subquestions=has_subquestions,
-            cross_page=len(group) > 1,
-        ))
+        results.append(
+            QuestionResult(
+                number=question_number,
+                image=image_filename,
+                marks=total_marks,
+                pages=pages_involved,
+                has_subquestions=has_subquestions,
+                cross_page=len(group) > 1,
+            )
+        )
 
     # Write mapping.json
     exam_result = ExamResult(
-        key=paper.key, year=paper.year, source=paper.source,
-        exam_type=paper.exam_type, questions=results,
+        key=paper.key,
+        year=paper.year,
+        source=paper.source,
+        exam_type=paper.exam_type,
+        questions=results,
         path=str(paper.path),
     )
     mapping_path = exam_output_dir / "mapping.json"
     mapping_path.write_text(
         json.dumps(exam_result.to_mapping(), indent=2, ensure_ascii=False)
     )
-    logger.info("[%s] Wrote %d questions to %s", paper.key, len(results), exam_output_dir)
+    logger.info(
+        "[%s] Wrote %d questions to %s", paper.key, len(results), exam_output_dir
+    )
 
     return exam_result

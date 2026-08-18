@@ -10,6 +10,7 @@ from pathlib import Path
 @dataclass
 class Bbox:
     """Pixel-coordinate bounding box."""
+
     x: int
     y: int
     w: int
@@ -38,6 +39,7 @@ class Bbox:
 @dataclass
 class QuestionBbox:
     """A detected question on a single page."""
+
     question_number: str
     bbox: Bbox
     marks: int | None = None
@@ -48,6 +50,7 @@ class QuestionBbox:
 @dataclass
 class PaperMeta:
     """Parsed metadata for an input paper."""
+
     path: Path
     year: int
     source: str
@@ -65,8 +68,9 @@ class PaperMeta:
 @dataclass
 class QuestionResult:
     """Final output record for one extracted question."""
+
     number: str
-    image: str          # relative filename, e.g. "q01.png"
+    image: str  # relative filename, e.g. "q01.png"
     marks: int | None
     pages: list[int]
     has_subquestions: bool
@@ -76,6 +80,7 @@ class QuestionResult:
 @dataclass
 class ExamResult:
     """Output record for one processed exam."""
+
     key: str
     year: int
     source: str
@@ -133,14 +138,16 @@ def build_index(exams: list[ExamResult]) -> dict:
     """Build the aggregate index.json structure from processed exams."""
     entries = []
     for e in sorted(exams, key=lambda e: (e.year, e.source, e.exam_type)):
-        entries.append({
-            "key": e.key,
-            "year": e.year,
-            "source": e.source,
-            "type": e.exam_type,
-            "questions": len(e.questions),
-            "input_path": e.path,
-        })
+        entries.append(
+            {
+                "key": e.key,
+                "year": e.year,
+                "source": e.source,
+                "type": e.exam_type,
+                "questions": len(e.questions),
+                "input_path": e.path,
+            }
+        )
     return {
         "exams": entries,
         "total_exams": len(entries),

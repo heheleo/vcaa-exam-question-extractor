@@ -7,7 +7,7 @@ import fitz
 import pytest
 from PIL import Image
 
-from src.models import Bbox, QuestionBbox, PaperMeta
+from src.models import Bbox, PaperMeta, QuestionBbox
 from src.pipeline import process_paper
 
 
@@ -15,7 +15,7 @@ def create_test_pdf(path: Path, pages: int = 2):
     doc = fitz.open()
     for p in range(pages):
         page = doc.new_page(width=595, height=842)
-        page.insert_text((50, 40), f"Question {p+1}", fontsize=14)
+        page.insert_text((50, 40), f"Question {p + 1}", fontsize=14)
         page.insert_text((50, 70), "(a) Part a", fontsize=11)
         page.insert_text((50, 90), "(b) Part b", fontsize=11)
         page.insert_text((50, 110), "[5 marks]", fontsize=10)
@@ -76,9 +76,19 @@ def test_cross_page_merge(test_pdf, tmp_path):
 
     mock = MagicMock()
     mock.detect.side_effect = [
-        [QuestionBbox(question_number="1", bbox=Bbox(40, 30, 500, 700), continued=True)],
-        [QuestionBbox(question_number="1", bbox=Bbox(40, 30, 500, 400), marks=8,
-                      continued_from=True)],
+        [
+            QuestionBbox(
+                question_number="1", bbox=Bbox(40, 30, 500, 700), continued=True
+            )
+        ],
+        [
+            QuestionBbox(
+                question_number="1",
+                bbox=Bbox(40, 30, 500, 400),
+                marks=8,
+                continued_from=True,
+            )
+        ],
     ]
 
     result = process_paper(paper, output_dir, mock, temp_dir, dpi=72)

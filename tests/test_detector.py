@@ -1,29 +1,38 @@
 import json
-from pathlib import Path
 
-import pytest
 from PIL import Image
 
 from src.detector import (
-    Detector,
-    parse_detection_response,
-    _fix_malformed_bbox,
     EXAM1_SYSTEM_PROMPT,
     EXAM2_SYSTEM_PROMPT,
+    Detector,
+    _fix_malformed_bbox,
+    parse_detection_response,
 )
-from src.models import Bbox
 
 
 def test_parse_valid_response():
-    response = json.dumps({
-        "page": 1,
-        "questions": [
-            {"question_number": "1", "bbox": {"x": 50, "y": 100, "w": 700, "h": 200},
-             "marks": 5, "continued": False, "continued_from": False},
-            {"question_number": "2", "bbox": {"x": 50, "y": 310, "w": 700, "h": 300},
-             "marks": 8, "continued": True, "continued_from": False},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 1,
+            "questions": [
+                {
+                    "question_number": "1",
+                    "bbox": {"x": 50, "y": 100, "w": 700, "h": 200},
+                    "marks": 5,
+                    "continued": False,
+                    "continued_from": False,
+                },
+                {
+                    "question_number": "2",
+                    "bbox": {"x": 50, "y": 310, "w": 700, "h": 300},
+                    "marks": 8,
+                    "continued": True,
+                    "continued_from": False,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, page_width=800, page_height=1000)
     assert len(questions) == 2
     assert questions[0].question_number == "1"
@@ -33,13 +42,20 @@ def test_parse_valid_response():
 
 
 def test_parse_response_with_nulls():
-    response = json.dumps({
-        "page": 3,
-        "questions": [
-            {"question_number": "5", "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
-             "marks": None, "continued": False, "continued_from": True},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 3,
+            "questions": [
+                {
+                    "question_number": "5",
+                    "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": True,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, page_width=200, page_height=200)
     assert len(questions) == 1
     assert questions[0].marks is None
@@ -47,13 +63,20 @@ def test_parse_response_with_nulls():
 
 
 def test_parse_bbox_clamped_to_bounds():
-    response = json.dumps({
-        "page": 1,
-        "questions": [
-            {"question_number": "1", "bbox": {"x": -10, "y": -5, "w": 9999, "h": 9999},
-             "marks": None, "continued": False, "continued_from": False},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 1,
+            "questions": [
+                {
+                    "question_number": "1",
+                    "bbox": {"x": -10, "y": -5, "w": 9999, "h": 9999},
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, page_width=800, page_height=600)
     assert len(questions) == 1
     b = questions[0].bbox
@@ -147,15 +170,27 @@ def test_parse_empty_questions():
 
 
 def test_parse_skips_zero_area_bbox():
-    response = json.dumps({
-        "page": 1,
-        "questions": [
-            {"question_number": "bad", "bbox": {"x": 0, "y": 0, "w": 0, "h": 0},
-             "marks": None, "continued": False, "continued_from": False},
-            {"question_number": "good", "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
-             "marks": None, "continued": False, "continued_from": False},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 1,
+            "questions": [
+                {
+                    "question_number": "bad",
+                    "bbox": {"x": 0, "y": 0, "w": 0, "h": 0},
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+                {
+                    "question_number": "good",
+                    "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, 800, 600)
     assert len(questions) == 1
     assert questions[0].question_number == "good"
@@ -185,32 +220,63 @@ def test_encode_image_base64(tmp_path):
     assert isinstance(b64, str)
     assert len(b64) > 0
 
+
 def test_parse_marks_string_bleed():
-    response = json.dumps({
-        "page": 1,
-        "questions": [
-            {"question_number": "1", "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
-             "marks": "2", "continued": False, "continued_from": False},
-            {"question_number": "2", "bbox": {"x": 0, "y": 60, "w": 100, "h": 50},
-             "marks": "2.5", "continued": False, "continued_from": False},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 1,
+            "questions": [
+                {
+                    "question_number": "1",
+                    "bbox": {"x": 0, "y": 0, "w": 100, "h": 50},
+                    "marks": "2",
+                    "continued": False,
+                    "continued_from": False,
+                },
+                {
+                    "question_number": "2",
+                    "bbox": {"x": 0, "y": 60, "w": 100, "h": 50},
+                    "marks": "2.5",
+                    "continued": False,
+                    "continued_from": False,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, 800, 600)
     assert questions[0].marks == 2
     assert questions[1].marks is None
 
+
 def test_parse_skips_malformed_bbox_shapes():
-    response = json.dumps({
-        "page": 1,
-        "questions": [
-            {"question_number": "bad1", "bbox": [10, 20, 100, 200, 0.9, 1],
-             "marks": None, "continued": False, "continued_from": False},
-            {"question_number": "bad2", "bbox": 5,
-             "marks": None, "continued": False, "continued_from": False},
-            {"question_number": "good", "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
-             "marks": None, "continued": False, "continued_from": False},
-        ]
-    })
+    response = json.dumps(
+        {
+            "page": 1,
+            "questions": [
+                {
+                    "question_number": "bad1",
+                    "bbox": [10, 20, 100, 200, 0.9, 1],
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+                {
+                    "question_number": "bad2",
+                    "bbox": 5,
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+                {
+                    "question_number": "good",
+                    "bbox": {"x": 10, "y": 10, "w": 100, "h": 50},
+                    "marks": None,
+                    "continued": False,
+                    "continued_from": False,
+                },
+            ],
+        }
+    )
     questions = parse_detection_response(response, 800, 600)
     assert len(questions) == 1
     assert questions[0].question_number == "good"

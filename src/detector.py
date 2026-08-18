@@ -1,7 +1,6 @@
 """Qwen V3 vision model integration for question detection."""
 
 from __future__ import annotations
-from ast import Attribute
 
 import base64
 import json
@@ -109,6 +108,7 @@ def _fix_malformed_bbox(text: str) -> str:
     )
     return text
 
+
 def _cast_into_int(value) -> int | None:
     """Casts a value into int if possible
     Prevents strings from crossing into typed code
@@ -117,8 +117,9 @@ def _cast_into_int(value) -> int | None:
         return None
     try:
         return int(value)
-    except:
+    except (ValueError, TypeError):
         return None
+
 
 def parse_detection_response(
     raw_json: str,
@@ -168,9 +169,11 @@ def parse_detection_response(
                 start = text.find("{")
                 end = text.rfind("}")
                 if start >= 0 and end > start:
-                    text = _fix_malformed_bbox(text[start:end + 1])
+                    text = _fix_malformed_bbox(text[start : end + 1])
             else:
-                logger.warning("Failed to parse JSON after 3 attempts: %.200s...", raw_json)
+                logger.warning(
+                    "Failed to parse JSON after 3 attempts: %.200s...", raw_json
+                )
                 return []
 
     if not isinstance(data, dict) or "questions" not in data:
@@ -183,8 +186,10 @@ def parse_detection_response(
             # Handle array format: [x, y, w, h]
             if isinstance(bbox_raw, list) and len(bbox_raw) == 4:
                 bbox = Bbox(
-                    x=int(bbox_raw[0]), y=int(bbox_raw[1]),
-                    w=int(bbox_raw[2]), h=int(bbox_raw[3]),
+                    x=int(bbox_raw[0]),
+                    y=int(bbox_raw[1]),
+                    w=int(bbox_raw[2]),
+                    h=int(bbox_raw[3]),
                 )
             else:
                 bbox = Bbox(
@@ -202,13 +207,15 @@ def parse_detection_response(
                 )
                 continue
 
-            questions.append(QuestionBbox(
-                question_number=str(entry.get("question_number", "")),
-                bbox=bbox,
-                marks=_cast_into_int(entry.get("marks")),
-                continued=bool(entry.get("continued", False)),
-                continued_from=bool(entry.get("continued_from", False)),
-            ))
+            questions.append(
+                QuestionBbox(
+                    question_number=str(entry.get("question_number", "")),
+                    bbox=bbox,
+                    marks=_cast_into_int(entry.get("marks")),
+                    continued=bool(entry.get("continued", False)),
+                    continued_from=bool(entry.get("continued_from", False)),
+                )
+            )
         except (KeyError, TypeError, ValueError, AttributeError) as e:
             logger.warning("Skipping malformed question entry: %s", e)
             continue
@@ -252,28 +259,36 @@ class Detector:
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{image_b64}"},
-                        },
-                        {"type": "text", "text": prompt},
-                    ],
-                }],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{image_b64}"
+                                },
+                            },
+                            {"type": "text", "text": prompt},
+                        ],
+                    }
+                ],
                 temperature=0.0,
                 max_tokens=4096,
             )
         except Exception as e:
             logger.error(
                 "API call failed for page %d of exam type '%s': %s",
-                page_number, exam_type, e,
+                page_number,
+                exam_type,
+                e,
             )
             return []
 
         raw_text = response.choices[0].message.content or ""
-        logger.debug("Raw detector response for page %d: %s", page_number, raw_text[:200])
+        logger.debug(
+            "Raw detector response for page %d: %s", page_number, raw_text[:200]
+        )
 
         questions = parse_detection_response(raw_text, width, height)
         logger.info("Page %d: detected %d questions", page_number, len(questions))

@@ -1,4 +1,11 @@
-from src.models import Bbox, QuestionBbox, PaperMeta, QuestionResult, ExamResult, parse_filename, build_index
+from src.models import (
+    Bbox,
+    ExamResult,
+    QuestionBbox,
+    QuestionResult,
+    build_index,
+    parse_filename,
+)
 
 
 def test_bbox_creation():
@@ -67,12 +74,19 @@ def test_parse_filename_with_path():
 
 def test_exam_result_to_mapping():
     q = QuestionResult(
-        number="1", image="q01.png", marks=5, pages=[1],
-        has_subquestions=True, cross_page=False,
+        number="1",
+        image="q01.png",
+        marks=5,
+        pages=[1],
+        has_subquestions=True,
+        cross_page=False,
     )
     result = ExamResult(
-        key="2024-vcaa-exam1", year=2024, source="vcaa",
-        exam_type="exam1", questions=[q],
+        key="2024-vcaa-exam1",
+        year=2024,
+        source="vcaa",
+        exam_type="exam1",
+        questions=[q],
         path="/data/2024-vcaa-exam-1.pdf",
     )
     mapping = result.to_mapping()
@@ -90,17 +104,27 @@ def test_exam_result_to_mapping():
 
 def test_build_index():
     q1 = QuestionResult(
-        number="1", image="q01.png", marks=5, pages=[1],
-        has_subquestions=False, cross_page=False,
+        number="1",
+        image="q01.png",
+        marks=5,
+        pages=[1],
+        has_subquestions=False,
+        cross_page=False,
     )
     e1 = ExamResult(
-        key="2024-vcaa-exam1", year=2024, source="vcaa",
-        exam_type="exam1", questions=[q1],
+        key="2024-vcaa-exam1",
+        year=2024,
+        source="vcaa",
+        exam_type="exam1",
+        questions=[q1],
         path="/data/2024-vcaa-exam-1.pdf",
     )
     e2 = ExamResult(
-        key="2023-vcaa-exam1", year=2023, source="vcaa",
-        exam_type="exam1", questions=[],
+        key="2023-vcaa-exam1",
+        year=2023,
+        source="vcaa",
+        exam_type="exam1",
+        questions=[],
         path="/data/2023-vcaa-exam-1.pdf",
     )
 

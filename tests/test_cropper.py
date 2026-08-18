@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from src.cropper import crop_question, trim_blank_bottom, merge_vertical
+from src.cropper import crop_question, merge_vertical, trim_blank_bottom
 from src.models import Bbox
 
 

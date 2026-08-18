@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""PDF Question Extraction Pipeline — CLI entry point.
-
-Usage:
-    python run.py --input ./papers/ --output ./output/
-    python run.py --input ./papers/ --output ./output/ -c config.yaml --dpi 200 -v
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -17,25 +9,39 @@ from pathlib import Path
 
 import yaml
 
-from src.pipeline import scan_input_dir, process_paper
 from src.detector import Detector
 from src.models import build_index
+from src.pipeline import process_paper, scan_input_dir
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Extract exam questions as images from VCE math PDFs.",
     )
-    parser.add_argument("--input", "-i", required=True,
-                        help="Directory containing exam PDFs (recursively scanned).")
-    parser.add_argument("--output", "-o", required=True,
-                        help="Directory to write extracted question images and mappings.")
-    parser.add_argument("--config", "-c", default="config.yaml",
-                        help="Path to YAML config (default: config.yaml).")
-    parser.add_argument("--dpi", type=int, default=300,
-                        help="Page rendering DPI (default: 300).")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="Enable debug logging.")
+    parser.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        help="Directory containing exam PDFs (recursively scanned).",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        help="Directory to write extracted question images and mappings.",
+    )
+    parser.add_argument(
+        "--config",
+        "-c",
+        default="config.yaml",
+        help="Path to YAML config (default: config.yaml).",
+    )
+    parser.add_argument(
+        "--dpi", type=int, default=300, help="Page rendering DPI (default: 300)."
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable debug logging."
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -95,8 +101,14 @@ def main():
 
         for i, paper in enumerate(papers, start=1):
             logger.info("=" * 60)
-            logger.info("[%d/%d] Processing %s (type=%s, source=%s)",
-                        i, len(papers), paper.key, paper.exam_type, paper.source)
+            logger.info(
+                "[%d/%d] Processing %s (type=%s, source=%s)",
+                i,
+                len(papers),
+                paper.key,
+                paper.exam_type,
+                paper.source,
+            )
             try:
                 result = process_paper(
                     paper=paper,
@@ -106,8 +118,9 @@ def main():
                     dpi=args.dpi,
                 )
                 exam_results.append(result)
-                logger.info("[%s] ✓ Extracted %d questions",
-                            paper.key, len(result.questions))
+                logger.info(
+                    "[%s] ✓ Extracted %d questions", paper.key, len(result.questions)
+                )
             except Exception as e:
                 logger.exception("[%s] ✗ Failed: %s", paper.key, e)
 
@@ -117,8 +130,11 @@ def main():
     index_path.write_text(json.dumps(index, indent=2, ensure_ascii=False))
 
     logger.info("=" * 60)
-    logger.info("DONE — %d/%d papers processed",
-                sum(1 for r in exam_results if r.questions), len(papers))
+    logger.info(
+        "DONE — %d/%d papers processed",
+        sum(1 for r in exam_results if r.questions),
+        len(papers),
+    )
     logger.info("Total questions extracted: %d", index["total_questions"])
     logger.info("Output: %s", output_dir)
     logger.info("Index:  %s", index_path)

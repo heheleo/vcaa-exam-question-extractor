@@ -2,19 +2,22 @@ from pathlib import Path
 
 from src.models import Bbox, QuestionBbox
 from src.pipeline import (
-    scan_input_dir,
     match_continued_questions,
     question_sort_key,
+    scan_input_dir,
 )
 
 
 def make_q(num: str, page: int, y: int, continued=False, continued_from=False):
-    return (page, QuestionBbox(
-        question_number=num,
-        bbox=Bbox(x=50, y=y, w=700, h=100),
-        continued=continued,
-        continued_from=continued_from,
-    ))
+    return (
+        page,
+        QuestionBbox(
+            question_number=num,
+            bbox=Bbox(x=50, y=y, w=700, h=100),
+            continued=continued,
+            continued_from=continued_from,
+        ),
+    )
 
 
 def test_scan_finds_valid_files(tmp_path: Path):

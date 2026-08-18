@@ -4,7 +4,7 @@ import fitz
 import pytest
 from PIL import Image
 
-from src.pdf_utils import render_pages, get_page_count
+from src.pdf_utils import get_page_count, render_pages
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def multi_page_pdf(tmp_path: Path) -> Path:
     doc = fitz.open()
     for i in range(3):
         page = doc.new_page(width=595, height=842)
-        page.insert_text((50, 50), f"Question {i+1}", fontsize=14)
+        page.insert_text((50, 50), f"Question {i + 1}", fontsize=14)
     doc.save(str(path))
     doc.close()
     return path
@@ -53,7 +53,7 @@ def test_render_pages_multi(multi_page_pdf, tmp_path):
     images = render_pages(multi_page_pdf, out_dir, dpi=150)
     assert len(images) == 3
     for i, p in enumerate(images):
-        assert p.name == f"page_{i+1:03d}.png"
+        assert p.name == f"page_{i + 1:03d}.png"
 
 
 def test_render_pages_creates_output_dir(single_page_pdf, tmp_path):
