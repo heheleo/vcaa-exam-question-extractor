@@ -17,24 +17,57 @@ DETECTION_PROMPT = """\
 You are reading page {page_number} of a VCE mathematics exam. The image is {width}x{height} pixels.
 
 Find every printed question or sub-part label on this page: things like \
-"Question 3", "3.", "4", "a.", "b.", "i.", "ii.". Ignore page headers, \
-footers, watermarks, and multiple-choice option letters (A., B., C., D., E.).
+"Question 3", "3.", "4", "a.", "b.", "i.". Ignore page headers, \
+footers and watermarkks.
 
 For each label return:
-- label: the exact printed text, nothing added, e.g. 'a.', '3', 'ii.'
-- box_2d: [ymin, xmin, ymax, xmax] in the built-in bounding box format, \
-values normalized to 0-1000. The box is the rectangle from this label down \
-to the next label, covering the full width of the question (one column on \
-two-column pages) and its working and answer lines
-- marks: the marks printed with the label (e.g. 3 for "(3 marks)"), or null
-- text: all printed text in this block, transcribed exactly
+- label: the exact printed text, e.g. 'a.', '3', 'ii.'
+- box_2d: [ymin, xmin, ymax, xmax] in the built-in bounding box format. The box \
+should cover the full question, including marks and any figures/images.
+- marks: the marks for the label (e.g. 3 for "(3 marks)"), or null
+- text: all printed text in this block, transcribed exactly. You do not need to transcribe figures/images.
 
-If the page has no question content (cover page, formula sheet, blank page), \
+If the page has no question content (e.g. cover page, formula sheet), \
 return {{"page": {page_number}, "blocks": []}}.
-
-Return ONLY JSON, nothing else:
-{{"page": {page_number}, "blocks": [{{"label": "3", "box_2d": [80, 60, 400, 940], "marks": 3, "text": "Question 3\nFind the derivative of ..."}}]}}
 """
+
+DETECTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "page": {"type": "integer"},
+        "blocks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": "Exact printed label text, e.g. 'a.', '3', 'ii.'",
+                    },
+                    "box_2d": {
+                        "type": "array",
+                        "description": "Bounding box [ymin, xmin, ymax, xmax], values 0-1000",
+                        "items": {"type": "number"},
+                        "minItems": 4,
+                        "maxItems": 4,
+                    },
+                    "marks": {
+                        "type": ["integer", "null"],
+                        "description": "Marks printed with the label, or null",
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "All printed text in the block; skip figures/images",
+                    },
+                },
+                "required": ["label", "box_2d", "marks", "text"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["page", "blocks"],
+    "additionalProperties": False,
+}
 
 
 def _box_2d_to_bbox(box: list, page_width: int, page_height: int) -> Bbox:
@@ -107,7 +140,7 @@ def parse_detection_response(
                     text = text[start : end + 1]
             else:
                 logger.warning(
-                    "Failed to parse JSON after 3 attempts: %.200s...", raw_json
+                    "Failed to parse JSON after 3 attempts: %s...", raw_json
                 )
                 return []
 
@@ -200,7 +233,11 @@ class Detector:
                         ],
                     }
                 ],
-                temperature=0.0,
+                extra_body={
+                    "reasoning": {
+                        "effort": "minimal"
+                    }
+                },
                 max_tokens=8192,
             )
         except Exception as e:
