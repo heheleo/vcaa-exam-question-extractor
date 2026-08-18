@@ -94,14 +94,20 @@ def group_questions(
     for page, q in sorted_qs:
         # Duplicate or contained box? (e.g. the model boxed the question
         # AND a sub-part inside it)
-        if prev is not None and prev[0] == page and _overlap_ratio(prev[1].bbox, q.bbox) > 0.5:
+        if (
+            prev is not None
+            and prev[0] == page
+            and _overlap_ratio(prev[1].bbox, q.bbox) > 0.5
+        ):
             logger.info("Dropping duplicate box labeled %r on page %d", q.label, page)
             continue
 
         num = extract_number(q.label)
         if num is None:
             if not is_part_label(q.label) or current is None:
-                logger.warning("Dropping unrecognized label %r on page %d", q.label, page)
+                logger.warning(
+                    "Dropping unrecognized label %r on page %d", q.label, page
+                )
                 continue
         elif current is None or num != current_num:
             current = []
