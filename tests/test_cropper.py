@@ -69,6 +69,10 @@ def test_merge_different_widths():
     merged = merge_vertical([img1, img2])
     assert merged.width == 100
     assert merged.height == 100
+    # Left-aligned: narrower image hugs x=0, right side filled with white
+    assert merged.getpixel((0, 0)) == (255, 0, 0)
+    assert merged.getpixel((99, 0)) == (255, 255, 255)
+    assert merged.getpixel((0, 75)) == (0, 0, 255)
 
 
 def test_merge_single_image():

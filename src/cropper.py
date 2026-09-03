@@ -46,7 +46,7 @@ def trim_blank_bottom(image: Image.Image) -> Image.Image:
 def merge_vertical(images: list[Image.Image]) -> Image.Image:
     """Vertically concatenate images with no gap between them.
 
-    Images are center-aligned horizontally if widths differ.
+    Images are left-aligned if widths differ.
     Returns a 1x1 blank image if the list is empty.
     """
     if not images:
@@ -61,8 +61,7 @@ def merge_vertical(images: list[Image.Image]) -> Image.Image:
     merged = Image.new("RGB", (max_width, total_height), "white")
     y_offset = 0
     for im in images:
-        x_offset = (max_width - im.width) // 2
-        merged.paste(im, (x_offset, y_offset))
+        merged.paste(im, (0, y_offset))
         y_offset += im.height
 
     return merged
