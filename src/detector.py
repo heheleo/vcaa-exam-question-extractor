@@ -27,45 +27,6 @@ including marks and any figures/images. DO NOT overlap with other labels
 If no questions (e.g. cover page): {{"page": {page_number}, "blocks": []}}
 """
 
-DETECTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "page": {"type": "integer"},
-        "blocks": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "label": {
-                        "type": "string",
-                        "description": "Exact printed label text, e.g. 'a.', '3', 'ii.'",
-                    },
-                    "box_2d": {
-                        "type": "array",
-                        "description": "Bounding box [ymin, xmin, ymax, xmax], values 0-1000",
-                        "items": {"type": "number"},
-                        "minItems": 4,
-                        "maxItems": 4,
-                    },
-                    "marks": {
-                        "type": ["integer", "null"],
-                        "description": "Marks printed with the label, or null",
-                    },
-                    "text": {
-                        "type": "string",
-                        "description": "All printed text in the block; skip figures/images",
-                    },
-                },
-                "required": ["label", "box_2d", "marks", "text"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    "required": ["page", "blocks"],
-    "additionalProperties": False,
-}
-
-
 def _box_2d_to_bbox(box: list, page_width: int, page_height: int) -> Bbox:
     """Convert Gemini's box_2d [ymin, xmin, ymax, xmax] (0-1000) to pixels."""
     ymin, xmin, ymax, xmax = [float(v) for v in box]
@@ -234,13 +195,6 @@ class Detector:
                         ],
                     }
                 ],
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "question_detection",
-                        "schema": DETECTION_SCHEMA,
-                    },
-                },
                 extra_body={
                     "reasoning": {
                         "effort": "minimal"

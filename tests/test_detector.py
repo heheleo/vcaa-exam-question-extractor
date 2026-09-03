@@ -4,7 +4,6 @@ from PIL import Image
 
 from src.detector import (
     DETECTION_PROMPT,
-    DETECTION_SCHEMA,
     Detector,
     _box_2d_to_bbox,
     parse_detection_response,
@@ -218,13 +217,6 @@ def test_parse_missing_blocks_key():
 
 def test_parse_empty_blocks():
     assert parse_detection_response('{"page": 1, "blocks": []}', 800, 600) == []
-
-
-def test_detection_schema_shape():
-    props = DETECTION_SCHEMA["properties"]["blocks"]["items"]["properties"]
-    assert set(props) == {"label", "box_2d", "marks", "text"}
-    assert props["box_2d"]["minItems"] == 4
-    assert props["box_2d"]["maxItems"] == 4
 
 
 def test_prompt_contains_key_instructions():
