@@ -23,7 +23,7 @@ For each label return:
 - box_2d: [ymin, xmin, ymax, xmax] covering the full question, \
 including marks and any figures/images. DO NOT overlap with other labels
 - marks: int (marks allocated) or null
-- text:all printed text in box (no images/figures)
+- text: all printed text in box (no images/figures)
 If no questions (e.g. cover page): {{"page": {page_number}, "blocks": []}}
 """
 
