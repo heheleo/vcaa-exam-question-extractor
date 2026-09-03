@@ -234,6 +234,13 @@ class Detector:
                         ],
                     }
                 ],
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "question_detection",
+                        "schema": DETECTION_SCHEMA,
+                    },
+                },
                 extra_body={
                     "reasoning": {
                         "effort": "minimal"
