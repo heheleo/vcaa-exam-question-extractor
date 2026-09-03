@@ -140,6 +140,19 @@ def test_parse_markdown_wrapped_json():
     assert blocks[0].label == "3"
 
 
+def test_parse_repairs_repeated_key_slip():
+    """Gemini emits 'label': 'marks': 2 — a key repeated mid-entry."""
+    response = (
+        '{"page": 1, "blocks": ['
+        '{"label": "a.", "box_2d": [100, 59, 500, 860], "marks": 1, "text": "a. State"}, '
+        '{"label": "c.", "box_2d": [542, 59, 903, 860], "label": "marks": 2, "text": "c. Sketch"}]}'
+    )
+    blocks = parse_detection_response(response, 800, 600)
+    assert len(blocks) == 2
+    assert blocks[1].label == "c."
+    assert blocks[1].marks == 2
+
+
 def test_parse_skips_malformed_box_2d():
     """One malformed box_2d must not lose the rest of the page's blocks."""
     response = json.dumps(

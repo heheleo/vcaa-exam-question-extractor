@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import re
 from pathlib import Path
 
 from openai import OpenAI
@@ -108,6 +109,11 @@ def parse_detection_response(
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         text = "\n".join(lines).strip()
+
+    # Gemini sometimes repeats a key mid-entry: "label": "marks": 2.
+    # Drop the stray first key (a string value directly followed by ":"
+    # can never occur in valid JSON, so this is safe).
+    text = re.sub(r'"(\w+)":\s*"([^"]*)":', r'"\2":', text)
 
     # Try multiple parsing strategies
     data = None
