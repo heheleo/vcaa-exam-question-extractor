@@ -37,7 +37,10 @@ def main():
         help="Path to YAML config (default: config.yaml).",
     )
     parser.add_argument(
-        "--dpi", type=int, default=300, help="Page rendering DPI (default: 300)."
+        "--dpi",
+        type=int,
+        default=None,
+        help="Page rendering DPI (default: rendering.dpi in config.yaml, else 300).",
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable debug logging."
@@ -68,6 +71,9 @@ def main():
     base_url = api.get("base_url", "")
     api_key = api.get("api_key", "")
     model = api.get("model", "qwen-vl-max")
+    dpi = args.dpi if args.dpi is not None else config.get("rendering", {}).get(
+        "dpi", 300
+    )
 
     if not base_url or not api_key:
         logger.error("API base_url and api_key must be set in config.yaml")
@@ -115,7 +121,7 @@ def main():
                     output_dir=output_dir,
                     detector=detector,
                     temp_dir=temp_dir / paper.key,
-                    dpi=args.dpi,
+                    dpi=dpi,
                 )
                 exam_results.append(result)
                 logger.info(
