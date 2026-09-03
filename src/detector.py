@@ -14,21 +14,16 @@ from src.models import Bbox, QuestionBbox
 logger = logging.getLogger(__name__)
 
 DETECTION_PROMPT = """\
-You are reading page {page_number} of a VCE mathematics exam. The image is {width}x{height} pixels.
-
-Find every printed question or sub-part label on this page: things like \
-"Question 3", "3.", "4", "a.", "b.", "i.". Ignore page headers, \
-footers and watermarkks.
-
+Analyze VCE math exam page {page_number} ({width}x{height}px).
+Task: Extract all question/sub-part labels (e.g., "3", "a.", "ii."). \
+Ignore non-question text.
 For each label return:
-- label: the exact printed text, e.g. 'a.', '3', 'ii.'
-- box_2d: [ymin, xmin, ymax, xmax] in the built-in bounding box format. The box \
-should cover the full question, including marks and any figures/images.
-- marks: the marks for the label (e.g. 3 for "(3 marks)"), or null
-- text: all printed text in this block, transcribed exactly. You do not need to transcribe figures/images.
-
-If the page has no question content (e.g. cover page, formula sheet), \
-return {{"page": {page_number}, "blocks": []}}.
+- label: exact label (e.g. 'a' '3' 'i')
+- box_2d: [ymin, xmin, ymax, xmax] covering the full question, \
+including marks and any figures/images. DO NOT overlap with other labels
+- marks: int (marks allocated) or null
+- text:all printed text in box (no images/figures)
+If no questions (e.g. cover page): {{"page": {page_number}, "blocks": []}}
 """
 
 DETECTION_SCHEMA = {

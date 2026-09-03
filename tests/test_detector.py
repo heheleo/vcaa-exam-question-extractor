@@ -215,10 +215,11 @@ def test_detection_schema_shape():
 
 
 def test_prompt_contains_key_instructions():
-    assert "label" in DETECTION_PROMPT.lower()
-    assert "exact printed text" in DETECTION_PROMPT.lower()
-    assert "blocks" in DETECTION_PROMPT.lower()
-    assert "formula sheet" in DETECTION_PROMPT.lower()
+    prompt = DETECTION_PROMPT.lower()
+    assert "label" in prompt
+    assert "extract all question/sub-part labels" in prompt
+    assert "ignore non-question text" in prompt
+    assert "cover page" in prompt
     assert "box_2d" in DETECTION_PROMPT
 
 

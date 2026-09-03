@@ -44,7 +44,7 @@ def process_paper(
     """Run the full extraction pipeline for a single paper.
 
     Stage 1: Render pages to PNGs.
-    Stage 2: Detect question blocks via Qwen V3.
+    Stage 2: Detect question blocks via VLLM.
     Stage 3: Chain blocks into questions, crop, trim, merge, save.
     """
     exam_output_dir = output_dir / paper.key
