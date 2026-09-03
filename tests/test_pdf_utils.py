@@ -4,7 +4,7 @@ import fitz
 import pytest
 from PIL import Image
 
-from src.pdf_utils import get_page_count, render_pages
+from src.pdf_utils import render_pages
 
 
 @pytest.fixture
@@ -28,14 +28,6 @@ def multi_page_pdf(tmp_path: Path) -> Path:
     doc.save(str(path))
     doc.close()
     return path
-
-
-def test_get_page_count_single(single_page_pdf):
-    assert get_page_count(single_page_pdf) == 1
-
-
-def test_get_page_count_multi(multi_page_pdf):
-    assert get_page_count(multi_page_pdf) == 3
 
 
 def test_render_pages_creates_images(single_page_pdf, tmp_path):

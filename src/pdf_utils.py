@@ -7,15 +7,6 @@ from pathlib import Path
 import fitz
 
 
-def get_page_count(pdf_path: Path) -> int:
-    """Return the number of pages in a PDF."""
-    doc = fitz.open(str(pdf_path))
-    try:
-        return doc.page_count
-    finally:
-        doc.close()
-
-
 def render_pages(
     pdf_path: Path,
     output_dir: Path,
