@@ -65,12 +65,13 @@ class QuestionResult:
     """Final output record for one extracted question."""
 
     number: str
-    image: str  # relative filename, e.g. "q01.png"
+    image: str  # relative filename, e.g. "q01.png" or "mc01.png"
     marks: int | None
     pages: list[int]
     has_subquestions: bool
     cross_page: bool
     text: str = ""  # concatenated OCRed text of the question's blocks
+    kind: str = "short"  # "mcq" (exam2 Section A) or "short"
 
 
 @dataclass
@@ -94,6 +95,7 @@ class ExamResult:
                 {
                     "number": q.number,
                     "image": q.image,
+                    "type": q.kind,
                     "marks": q.marks,
                     "pages": q.pages,
                     "has_subquestions": q.has_subquestions,

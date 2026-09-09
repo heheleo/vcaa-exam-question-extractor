@@ -89,3 +89,38 @@ def group_questions(
         prev = (page, q)
 
     return groups
+
+
+def split_mcq_short_answer(
+    groups: list[list[tuple[int, QuestionBbox]]],
+    fallback_mcq_count: int = 20,
+) -> tuple[list[list[tuple[int, QuestionBbox]]], list[list[tuple[int, QuestionBbox]]]]:
+    """Split exam2 groups into (MCQ, short-answer) sections.
+
+    VCE Exam 2 Section A is multiple-choice (numbered 1-20) and Section B
+    restarts numbering at 1, so the split is detected where a question
+    number drops back to/below the max seen so far. No prompt change needed.
+
+    Fallback when no reset is found (e.g. partial detection): first
+    `fallback_mcq_count` groups are MCQ if there are more groups than that,
+    otherwise everything is MCQ.
+    """
+    seen_max = -1
+    split = None
+    for i, group in enumerate(groups):
+        num = extract_number(group[0][1].label)
+        if num is None:
+            continue
+        n = int(num)
+        if n <= seen_max:
+            split = i
+            break
+        seen_max = n
+
+    if split is None:
+        split = (
+            fallback_mcq_count
+            if len(groups) > fallback_mcq_count
+            else len(groups)
+        )
+    return groups[:split], groups[split:]
