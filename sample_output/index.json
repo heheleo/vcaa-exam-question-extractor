@@ -1,0 +1,14 @@
+{
+  "exams": [
+    {
+      "key": "2025-vcaa-exam2",
+      "year": 2025,
+      "source": "vcaa",
+      "type": "exam2",
+      "questions": 24,
+      "input_path": "papers/2025-vcaa-exam-2.pdf"
+    }
+  ],
+  "total_exams": 1,
+  "total_questions": 24
+}

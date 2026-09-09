@@ -1,0 +1,335 @@
+{
+  "year": 2025,
+  "source": "vcaa",
+  "exam_type": "exam2",
+  "total_questions": 24,
+  "questions": [
+    {
+      "number": "1",
+      "image": "mc01.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        2
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 1\nA function that has a range of [6, 12] is\nA. f : R → R, f(x) = 6 + 3cos(9x)\nB. f : R → R, f(x) = 6 + 6cos(3x)\nC. f : R → R, f(x) = 9 − 3cos(6x)\nD. f : R → R, f(x) = 9 − 6cos(3x)"
+    },
+    {
+      "number": "2",
+      "image": "mc02.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        2
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 2\nAll asymptotes of the graph of y = 2tan(π(x + 1/2)) are given by\nA. x = k, k ∈ Z\nB. x = 2k, k ∈ Z\nC. x = 2k + 1, k ∈ Z\nD. x = (4k + 1)/2, k ∈ Z"
+    },
+    {
+      "number": "3",
+      "image": "mc03.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        3
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 3\nThe graph of y = f(x) is shown below.\nWhich one of the following options best represents the graph of y = f(-x) + 2?\nA.\nB.\nC.\nD."
+    },
+    {
+      "number": "4",
+      "image": "mc04.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        4
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 4\nConsider the system of equations below containing the parameter k, where k \\in R.\nkx + 3y = k^2\n2x + (2k + 1)y = 6 - 2k\nFind the value(s) of k for which this system has no real solutions.\nA. k = -2 only\nB. k = \\frac{3}{2} only\nC. k = -2 or \\frac{3}{2}\nD. k \\in R \\setminus \\left\\{-2, \\frac{3}{2}\\right\\}"
+    },
+    {
+      "number": "5",
+      "image": "mc05.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        4
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 5\nWhich of the following sets represents a function that has an inverse function?\nA. \\{(1, 3), (2, 0), (2, 1)\\}\nB. \\{(-1, 3), (2, 2), (3, 1)\\}\nC. \\{(-1, 3), (0, 1), (1, 3)\\}\nD. \\{(1, 0), (2, 3), (1, 3)\\}"
+    },
+    {
+      "number": "6",
+      "image": "mc06.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        4
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 6\nThe trapezium rule is used, with two trapeziums, to estimate the area bounded by the graph of y = f(x), the x-axis and the lines x = 0 and x = 1.\nFor which function will the trapezium rule estimate be larger than the exact area?\nA. f(x) = 3 - e^x\nB. f(x) = x^3 + 1\nC. f(x) = 3\\sin(x) + 1\nD. f(x) = \\log_e(x + 3)"
+    },
+    {
+      "number": "7",
+      "image": "mc07.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        5
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 7\nConsider the algorithm below.\n\\begin{aligned} & \\mathrm{n} \\leftarrow 17 \\\\ & \\mathrm{k} \\leftarrow 5 \\\\ & \\text { while } \\mathrm{n}>\\mathrm{k} \\\\ & \\qquad \\mathrm{n} \\leftarrow \\mathrm{n}-\\mathrm{k} \\\\ & \\qquad \\text { print } \\mathrm{n} \\\\ & \\text { end while } \\end{aligned}\nIn order, the values printed by the algorithm are\nA. 12\nB. 12, 7\nC. 12, 7, 2\nD. 12, 7, 2, -3"
+    },
+    {
+      "number": "8",
+      "image": "mc08.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        5
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 8\nA random sample of n Victorian households is taken to estimate the proportion of all Victorian households that have vegetable gardens. The approximate 95% confidence interval calculated using this sample is (0.248, 0.552), correct to three decimal places.\nThe number of households, n, in the sample is\nA. 10\nB. 28\nC. 40\nD. 49"
+    },
+    {
+      "number": "9",
+      "image": "mc09.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        6
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": ""
+    },
+    {
+      "number": "10",
+      "image": "mc10.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        6
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": ""
+    },
+    {
+      "number": "11",
+      "image": "mc11.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        7
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 11\nThe chart below shows the daily price of a stock market share over a 30-day period.\n\nOver which of the following time intervals did the daily price undergo the greatest average rate of change?\nA. day 3 to day 10\nB. day 3 to day 17\nC. day 14 to day 21\nD. day 14 to day 28"
+    },
+    {
+      "number": "12",
+      "image": "mc12.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        7
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 12\nFor a normal random variable X, it is known that Pr(X > 200) = 0.325 and Pr(180 < X < 200) = 0.589\nThe mean and standard deviation of X are closest to\nA. 190 and 10\nB. 190 and 11\nC. 195 and 10\nD. 195 and 11"
+    },
+    {
+      "number": "13",
+      "image": "mc13.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        8
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 13\nThe graphs of y = f(x) and y = g(x) are sketched on the same set of axes below.\nWhich of the following could be the graph of y = (g ∘ f)(x)?\nA.\nB.\nC.\nD."
+    },
+    {
+      "number": "14",
+      "image": "mc14.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        9
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": ""
+    },
+    {
+      "number": "15",
+      "image": "mc15.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        9
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": ""
+    },
+    {
+      "number": "16",
+      "image": "mc16.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        9
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": ""
+    },
+    {
+      "number": "17",
+      "image": "mc17.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        10
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 17\nGiven that f:R \\to R satisfies \\int_1^2 f(x)\\,dx > \\int_1^3 f(x)\\,dx, the graph of y = f(x) could be\nA.\nB.\nC.\nD."
+    },
+    {
+      "number": "18",
+      "image": "mc18.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        11
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 18\nConsider the following graphs, which represent probability mass functions.\nI\nII\nIII\nIV\nWhich pair of these probability mass functions has the same mean?\nA. I and II\nB. I and IV\nC. II and III\nD. II and IV"
+    },
+    {
+      "number": "19",
+      "image": "mc19.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        12
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 19\nLet A be a point on the line y = x + c and B be a point on the curve y = log_e(x - 1).\nIf A and B are placed such that the line segment AB has the minimum possible length, and this length\nis \\sqrt{2}, the value of c must be\nA. \\sqrt{2} - 2\nB. \\sqrt{2}\nC. 1\nD. 0"
+    },
+    {
+      "number": "20",
+      "image": "mc20.png",
+      "type": "mcq",
+      "marks": null,
+      "pages": [
+        12
+      ],
+      "has_subquestions": false,
+      "cross_page": false,
+      "text": "Question 20\nLet a > 1, and consider the functions f and g defined below.\nf: R -> R, f(x) = a^x\ng: R -> R, g(x) = a^{2x+2}\nWhich one of the following sequences of transformations, when applied to f(x), does not\nproduce g(x)?\nA. dilation by a factor of 1/2 from the y-axis, then\ntranslation by 1 unit in the negative direction of the x-axis\nB. dilation by a factor of 1/2 from the y-axis, then\ndilation by a factor of a^2 from the x-axis\nC. dilation by a factor of a from the x-axis, then\ndilation by a factor of 1/2 from the y-axis, then\ntranslation by 1 unit in the positive direction of the x-axis\nD. dilation by a factor of a^3 from the x-axis, then\ntranslation by 1 unit in the positive direction of the x-axis, then\ndilation by a factor of 1/2 from the y-axis"
+    },
+    {
+      "number": "1",
+      "image": "q01.png",
+      "type": "short",
+      "marks": 13,
+      "pages": [
+        14,
+        14,
+        14,
+        15,
+        15,
+        15,
+        15
+      ],
+      "has_subquestions": true,
+      "cross_page": true,
+      "text": "Question 1 (13 marks)\nLet g : R -> R be defined by g(x) = 4x^3 - 3x^4.\na. Find the coordinates of both stationary points of g.\n2 marks\nb. Sketch the graph of y = g(x) on the axes below, labelling the stationary points and\naxial intercepts with their coordinates.\n2 marks\nc. Complete the following gradient table with appropriate values of x and g'(x) to show that g has a stationary point of inflection.\n2 marks\n\nx\ng'(x)\nd. Find the average value of g between x = 0 and x = 2.\n2 marks\ne. Let h be the result after applying a sequence of transformations to g, such that h has a stationary point of inflection at (1, 0) and a local maximum at (-1, 1).\nWrite down a possible sequence of three transformations to map from g to h.\n3 marks\n1.\n2.\n3.\nf. Let X ~ Bi(4, p) be a binomial random variable.\nShow that Pr(X ≥ 3) = g(p) for all p ∈ [0, 1].\n2 marks"
+    },
+    {
+      "number": "2",
+      "image": "q02.png",
+      "type": "short",
+      "marks": 14,
+      "pages": [
+        16,
+        16,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        18,
+        18
+      ],
+      "has_subquestions": true,
+      "cross_page": true,
+      "text": "Question 2 (14 marks)\nLet\n\\( f : R \\rightarrow R \\), \\( f(x) = \\frac{x}{2} + 7 \\)\nand\n\\( g : R \\rightarrow R \\), \\( g(x) = A e^{kx} \\)\nwhere \\( A, k \\in R \\).\nThe graphs of \\( y = f(x) \\) and \\( y = g(x) \\) intersect at the points \\( (-12, 1) \\) and \\( (2, 8) \\), as shown below.\na. Write down two simultaneous equations in terms of A and k.\nSolve them, using algebra, to show that \\( A = 2^{\\frac{18}{7}} \\) and \\( k = \\frac{3}{14} \\log_e(2) \\).\n3 marks\nb. Find the value of b, where b ∈ R, such that g(x) can be expressed in the\nform g(x) = A×2bx.\n1 mark\nc. Use a definite integral to evaluate the area bounded by the graphs of y = f(x) and\ny = g(x), where x ∈ [-12, 2].\nGive the area correct to two decimal places.\n2 marks\nd. Let h(x) = f(x)-g(x).\ni. Write down an expression for the derivative of h(x).\n1 mark\nii. Find the maximum value of h(x), where x ∈ [-12, 2].\nGive your answer correct to two decimal places.\n1 mark\ne. Let g−1 be the inverse of g.\nFind the points where the graph of y = g−1(x) intersects with the graph of y = 2(x-7).\n2 marks\nf. Let F be an anti-derivative of f that passes through (0, c), where c \\in R.\nii. The graph of y = F(x) can be dilated by a factor of m from the x-axis such that its\nimage passes through both (-12, 1) and (2, 8).\nFind the values of m and c.\n2 marks"
+    },
+    {
+      "number": "3",
+      "image": "q03.png",
+      "type": "short",
+      "marks": 14,
+      "pages": [
+        20,
+        20,
+        20,
+        20,
+        21,
+        21,
+        21,
+        21,
+        21,
+        22,
+        22
+      ],
+      "has_subquestions": true,
+      "cross_page": true,
+      "text": "Question 3 (14 marks)\nThe time taken for a driver to travel to work each day, in minutes, is modelled by\na continuous random variable T with probability density function\n\nf(t) = \\begin{cases} \\frac{1}{1215000}(t-29)(59-t)^3 & 29 \\le t \\le 59 \\\\ 0 & \\text{otherwise} \\end{cases}\na.\ni. Find the mean time taken, in minutes, for the driver to travel to work each day.\n1 mark\nii. Find the standard deviation of the time taken, in minutes, for the driver to travel\nto work each day.\n2 marks\nb. The driver allows k minutes to travel to work each day. If the journey takes longer\nthan k minutes, the driver will be late. Whether the driver is late on a particular day\nis independent of whether they are late on any other day.\ni. If k = 47, write a definite integral to show that the probability of the driver being\nlate is 0.08704\n1 mark\nii. If k = 47, find the probability that the driver will be late on at least one day in\na five-day working week.\nGive your answer correct to four decimal places.\n2 marks\niii. For k = 47, let P̂ be the proportion of days the driver is late in any five-day\nworking week. Find Pr(0.4 ≤ P̂ ≤ 0.6) correct to four decimal places.\n2 marks\niv. Find the integer k such that the probability, correct to one decimal place, of the\ndriver being late at least once in any five-day working week is 0.2\n2 marks\nc. At a given traffic light, the wait time is modelled by a normal distribution with a mean\nof 2.5 minutes and a standard deviation of \\sigma minutes.\nd. The driver passes through three traffic lights (A, B and C) on their journey to work.\nThe probability of each traffic light being red is shown in the table below.\n\nTraffic light A B C\nProbability that the traffic light is red 0.2 0.3 0.1\n\nLet Y be the random variable representing the number of traffic lights that are red on\nthe driver's journey to work. Assume that each traffic light being red is independent\nof any other traffic light being red.\nComplete the following table for the probability distribution of Y.\n2 marks\n\ny 0 1 2 3\nPr(Y = y)"
+    },
+    {
+      "number": "4",
+      "image": "q04.png",
+      "type": "short",
+      "marks": 19,
+      "pages": [
+        23,
+        23,
+        23,
+        23,
+        24,
+        24,
+        24,
+        25,
+        25,
+        25,
+        25,
+        26,
+        26,
+        26,
+        26
+      ],
+      "has_subquestions": true,
+      "cross_page": true,
+      "text": "Question 4 (19 marks)\nConsider the function f : [0, 5π/2] → R, f(x) = sin(x) + 1.\nThe graph of y = f(x) is shown below.\na. Evaluate f(2π/3).\n1 mark\nb. Find the exact values of x for which f(x) = 3/2.\n1 mark\nc. There exist real numbers a and k in the interval (0, 5π/2), such that f(x + k) = f(x)\nfor all x ∈ [0, a].\nFind the value of k and the largest possible value of a.\n2 marks\nd. Consider the tangent to the graph of y = f(x) at the point A where x = 2π/3, as shown\non the axes below.\n\nFind the equation of the tangent to the graph of y = f(x) at the point where x = 2π/3. 1 mark\ne. Apply two iterations of Newton's method to f with x0 = 2π/3.\n\ni. Write down x2, correct to one decimal place. 1 mark\nii. On the axes in part d, draw the tangent to the graph of y = f(x) at the point\nwhere x = x1. 1 mark\n(Answer on the graph in part d.)"
+    }
+  ]
+}
