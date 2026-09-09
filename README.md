@@ -73,7 +73,7 @@ output/
 
 Example `mapping.json` entry:
 
-```json
+```json5
 {
   "number": "4",
   "image": "mc04.png",
@@ -86,12 +86,9 @@ Example `mapping.json` entry:
 }
 ```
 
-Naming by exam type (from the PDF filename, no prompt change): exam 1 is
-short-answer only (`q01.png`, `q02.png`, …). Exam 2 Section A is
-multiple-choice (`mc01.png`, `mc02.png`, …) and Section B restarts numbering
-for short answer (`q01.png`, `q02.png`, …), each with its own counter. The
-split is detected where question numbers reset; if no reset is found the
-first 20 groups count as MCQ. Each entry carries `"type": "mcq" | "short"`.
+Types of questions:
+- `mcq` - multiple choice question (exam 2)
+- `short` - short answer question (exam 1, exam 2)
 
 ## Project Structure
 
